@@ -13,14 +13,15 @@ module Mastermind
       @correct_guesses = Array.new(@possible_colors.length, '_')
       @colors_in_wrong_position = 0
       @remaining_colors = []
-      @player1 = Player.new()
+      @player1 = Player::PlayerGuesser.new()
       @game_types = ["guesser", "setter"]
     end
 
     def start_game_type_one()
-      puts "\nIn this instance, you will be the guesser, and the computer will be the creator"
+      puts "\nIn this instance, you will be the guesser, and the computer will be the setter"
       sleep(3)
-      puts "\nThere are #{@possible_colors.length} possible colors, and #{@possible_colors.length} colors to guess in the right order"
+      puts "\nThere are #{@possible_colors.length} possible colors: #{@possible_colors.join(' ')}"
+      puts "The computer will set #{@possible_colors.length} colors in a particular order, which you will have to guess!"
       puts "#{@correct_guesses.join(' ')}   <-- 'O' represents a correct guess"
       sleep(3)
       puts "\nYou have #{@allowed_number_of_guesses} tries to guess the secret color code!"
@@ -91,18 +92,17 @@ module Mastermind
       sleep(2)
       correct_guesses.each_with_index do |guess, i|
         if guess == "_" && @remaining_colors.include?(@player1.guessed_colors[i])
-          puts "\tYour guess for Position #{i + 1} (#{@player1.guessed_colors[i]}) is in the wrong position"
+          puts "\tYour guess of Position #{i + 1} (#{@player1.guessed_colors[i]}) is in the wrong position"
           @colors_in_wrong_position += 1
-          sleep(2)
         end
       end
       if @colors_in_wrong_position == 0
         puts "\tNone of your other selected colors were present in the computer's list"
-        sleep(3)
       end
       @colors_in_wrong_position = 0
       @player1.guessed_colors = []
       @remaining_colors = []
+      sleep(2)
     end
   
     def game_status()
@@ -132,7 +132,7 @@ module Mastermind
       @correct_guesses = Array.new(@possible_colors.length, '_')
       @colors_in_wrong_position = 0
       @remaining_colors = []
-      @computer = Computer::ComputerGuesser.new()
+      @computer = Computer::ComputerGuesser.new(possible_colors)
       @game_types = ["guesser", "setter"]
     end
 
@@ -140,8 +140,21 @@ module Mastermind
       player = Player::PlayerSetter.new()
       @colors_selected_by_player = player.select_player_colors(@possible_colors)
     end
-  end
 
+    def start_game_type_two()
+      puts "\nIn this instance, you will be the setter, and the computer will be the guesser"
+      sleep(3)
+      puts "\nThere are #{@possible_colors.length} possible colors: #{@possible_colors.join(' ')}"
+      puts "You will set #{@possible_colors.length} colors in a particular order, which the computer will have to guess!"
+      sleep(3)
+      puts "\nThe computer will have #{@allowed_number_of_guesses} tries to guess the secret color code!"
+      new_round()
+    end
+
+    def new_round()
+      
+    end
+  end
 end
 
 module Player
@@ -153,6 +166,7 @@ module Player
       @guessed_colors = []
       @incorrect_guesses = []
     end
+  end
 
   class PlayerSetter
   attr_accessor :set_colors
@@ -166,7 +180,7 @@ module Player
       possible_colors.length.times do
         puts "\nPlease select a color..."
         selection = gets.chomp
-        until @possible_colors.any? { |color| color == selection }
+        until possible_colors.any? { |color| color == selection }
           puts "\nPlease select a VALID color"
           selection = gets.chomp
         end
@@ -216,6 +230,7 @@ module Computer
         elsif @correct_guesses[i] == '_'
           guess = get_random_color()
         end
+      end
       return @new_guesses
     end
   end
@@ -223,9 +238,9 @@ end
 
 def choose_game_type()
   puts "\n\n\nWelcome to Mastermind!"
-  puts "\nWould you prefer to be the guesser or the master?"
+  puts "\nWould you prefer to be the guesser or the setter?"
   response = gets.chomp()
-  until @game_types.any? == response
+  until response == "guesser" || response == "setter"
     puts "\nPlease select a valid game type..."
     response = gets.chomp()
   end
@@ -238,7 +253,7 @@ end
 
 possible_colors = ['red', 'blue', 'yellow', 'green', 'orange', 'pink']
 
-game_type = new_game.choose_game_type
+game_type = choose_game_type()
 if game_type == "guesser"
   new_game = Mastermind::GameType1.new(12, possible_colors)
   new_game.get_computer_colors
